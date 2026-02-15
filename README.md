@@ -1,2 +1,2 @@
-# flocking
-Flocking/Predator Simulation
+# FLOCKING/PREDATOR SIM
+ 
