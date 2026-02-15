@@ -1,146 +1,99 @@
-// Camera.js
 import { mat4, vec3 } from 'gl-matrix';
-import { registerResource, unregisterResource } from '../utils/MemoryManager.js';
 
-export default class Camera {
+export class Camera {
 	constructor(device, width, height) {
 		this.device = device;
+		this.position = vec3.fromValues(0, 2000, 4000);
+		this.target = vec3.fromValues(0, 0, 0);
+		this.up = vec3.fromValues(0, 1, 0);
+		this.fov = 40 * (Math.PI / 180);
+		this.aspect = width / height;
+		this.near = 0.1;
+		this.far = 100000;
+
 		this.projectionMatrix = mat4.create();
 		this.viewMatrix = mat4.create();
-		this.position = vec3.fromValues(0, 0, 0); // Positioned along the z-axis
-		this.aspect = width / height;
-		this.isActive = true; // Flag to track if camera is active
-		
-		// Resource tracking
-		this.resources = {
-			buffers: [],
-			others: []
-		};
-		
-		// Register with memory manager
-		registerResource(this, 'others');
 
-		// Initialize buffers
-		this.projectionBuffer = this.createBuffer(64, 'Projection Buffer');
-		this.viewBuffer = this.createBuffer(64, 'View Buffer');
-		this.modelBuffer = this.createBuffer(64, 'Model Buffer'); // Placeholder, can be updated later
-
-		// Set initial projection and view matrices
-		this.updateProjection();
-		this.updateView();
-	}
-	
-	// Track a resource for automatic cleanup
-	trackResource(resource, type = 'others') {
-		if (!resource) return resource;
-		
-		// Add to appropriate resource list
-		if (this.resources[type]) {
-			this.resources[type].push(resource);
-		} else {
-			this.resources.others.push(resource);
-		}
-		
-		// Register with global memory manager
-		registerResource(resource, type);
-		
-		return resource;
-	}
-
-	createBuffer(size, label = 'Camera Buffer') {
-		const buffer = this.device.createBuffer({
-			size,
+		this.projectionBuffer = device.createBuffer({
+			size: 64,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-			label
+			label: 'Projection'
 		});
-		
-		// Track the buffer
-		return this.trackResource(buffer, 'buffers');
+
+		this.viewBuffer = device.createBuffer({
+			size: 64,
+			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+			label: 'View'
+		});
+
+		this.update();
 	}
 
-	getBuffers() {
-		return {
-			projectionBuffer: this.projectionBuffer,
-			viewBuffer: this.viewBuffer,
-			modelBuffer: this.modelBuffer
-		};
+	update() {
+		mat4.perspective(this.projectionMatrix, this.fov, this.aspect, this.near, this.far);
+		mat4.lookAt(this.viewMatrix, this.position, this.target, this.up);
+		this.device.queue.writeBuffer(this.projectionBuffer, 0, this.projectionMatrix);
+		this.device.queue.writeBuffer(this.viewBuffer, 0, this.viewMatrix);
 	}
 
-	updateAspect(width, height) {
-		if (width <= 0 || height <= 0) {
-			console.warn(`Invalid aspect ratio dimensions: ${width}x${height}`);
-			return;
-		}
-		
+	resize(width, height) {
 		this.aspect = width / height;
-		this.updateProjection();
+		this.update();
 	}
 
-	updateProjection(fov = Math.PI / 4, near = 0.1, far = 100000) {
-		mat4.perspective(this.projectionMatrix, fov, this.aspect, near, far);
-		this.updateBuffers(); // Synchronize buffer with projection matrix
+	destroy() {
+		this.projectionBuffer?.destroy();
+		this.viewBuffer?.destroy();
+	}
+}
+
+export class CameraController {
+	constructor(camera) {
+		this.camera = camera;
+		this.distance = vec3.length(camera.position);
+		this.theta = Math.atan2(camera.position[2], camera.position[0]);
+		this.phi = Math.acos(camera.position[1] / this.distance);
+		this.isDragging = false;
+		this.lastX = 0;
+		this.lastY = 0;
 	}
 
-	updateView() {
-		const target = vec3.fromValues(0, 0, 0); // Looking at the origin
-		const up = vec3.fromValues(0, 1, 0); // Y-axis is up
-		mat4.lookAt(this.viewMatrix, this.position, target, up);
-		this.updateBuffers(); // Synchronize buffer with view matrix
+	onMouseDown(x, y) {
+		this.isDragging = true;
+		this.lastX = x;
+		this.lastY = y;
 	}
 
-	updateBuffers() {
-		if (!this.device || !this.isActive) {
-			return;
-		}
-		
-		try {
-			if (this.projectionBuffer && this.isActive) {
-				this.device.queue.writeBuffer(this.projectionBuffer, 0, this.projectionMatrix);
-			}
-			
-			if (this.viewBuffer && this.isActive) {
-				this.device.queue.writeBuffer(this.viewBuffer, 0, this.viewMatrix);
-			}
-		} catch (error) {
-			console.error("Error updating camera buffers:", error);
-		}
+	onMouseUp() {
+		this.isDragging = false;
 	}
 
-	cleanup() {
-		// Mark as inactive first to prevent further buffer updates
-		this.isActive = false;
-		
-		// Clean up all tracked resources
-		for (const type in this.resources) {
-			const resources = this.resources[type];
-			if (resources && resources.length > 0) {
-				
-				// Clean up each resource
-				for (let i = resources.length - 1; i >= 0; i--) {
-					const resource = resources[i];
-					if (resource) {
-						// Unregister from global memory manager
-						unregisterResource(resource, type);
-						
-						// Explicitly nullify the resource
-						resources[i] = null;
-					}
-				}
-				
-				// Clear the array
-				this.resources[type] = [];
-			}
-		}
-		
-		// Explicitly nullify buffer references
-		this.projectionBuffer = null;
-		this.viewBuffer = null;
-		this.modelBuffer = null;
-		
-		// Clear device reference
-		this.device = null;
-		
-		// Unregister from memory manager
-		unregisterResource(this, 'others');
+	onMouseMove(x, y) {
+		if (!this.isDragging) return;
+
+		const dx = x - this.lastX;
+		const dy = y - this.lastY;
+		const sensitivity = 5.0;
+
+		this.theta -= dx * sensitivity;
+		this.phi = Math.max(0.1, Math.min(Math.PI - 0.1, this.phi - dy * sensitivity));
+
+		this.updatePosition();
+		this.lastX = x;
+		this.lastY = y;
+	}
+
+	onWheel(delta) {
+		const zoomSpeed = 0.001;
+		this.distance = Math.max(100, Math.min(50000, this.distance * (1 + delta * zoomSpeed)));
+		this.updatePosition();
+	}
+
+	updatePosition() {
+		const x = this.distance * Math.sin(this.phi) * Math.cos(this.theta);
+		const y = this.distance * Math.cos(this.phi);
+		const z = this.distance * Math.sin(this.phi) * Math.sin(this.theta);
+		vec3.set(this.camera.position, x, y, z);
+		this.camera.update();
 	}
 }
