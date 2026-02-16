@@ -27,7 +27,7 @@
 </script>
 
 <svelte:head>
-	<title>Flocking Simulation</title>
+	<title>Flocking: Predator POV</title>
 </svelte:head>
 
 <div class="container">
@@ -48,7 +48,7 @@
 	</div>
 	
 	<div class="predator-pov">
-		<p>predator pov: periodic re-target</p>
+		<p>WebGPU Flocking: Predator POV</p>
 	</div>
 </div>
 
@@ -99,10 +99,10 @@
 
 	.predator-pov {
 		position: absolute;
-		bottom: 10px;
-		left: 10px;
-		width: 330px;
-		height: 330px;
+		bottom: 20px;
+		left: 55px;
+		/* width: 330px; */
+		/* height: 330px; */
 		padding: 10px;
 		border-radius: 4px;
 		z-index: 100;

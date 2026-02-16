@@ -430,7 +430,7 @@ export class FlockingEngine {
 		// Predator POV render pass
 		const pipSize = Math.min(Math.max(Math.min(this.canvasWidth, this.canvasHeight) * 0.4, 300), 350);
 		const pipX = 20;
-		const pipY = this.canvasHeight - pipSize - 50;
+		const pipY = this.canvasHeight - pipSize - 20;
 
 		const povPass = encoder.beginRenderPass({
 			colorAttachments: [{ view: textureView, loadOp: 'load', storeOp: 'store' }],
