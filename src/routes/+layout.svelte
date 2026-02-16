@@ -1,5 +1,5 @@
 <svelte:head>
-	<title>FLOCKING</title>
+	<title>B I R D S</title>
 	<meta name="description" content="WebGPU flocking sim with a predator" />
 	<meta name="keywords" content="flocking webgpu wgpu" />
 	<meta name="author" content="AUFBAU" />
