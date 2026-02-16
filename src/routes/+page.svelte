@@ -27,7 +27,7 @@
 </script>
 
 <svelte:head>
-	<title>Flocking: Predator POV</title>
+	<title>FLOCKING</title>
 </svelte:head>
 
 <div class="container">
@@ -46,10 +46,11 @@
 			seamless
 		></iframe>
 	</div>
-	
-	<div class="predator-pov">
-		<p>WebGPU Flocking: Predator POV</p>
+
+	<div class="title">
+		<p>:: YOU ARE BEING OBSERVED ::</p>
 	</div>
+
 </div>
 
 <style>
@@ -97,21 +98,19 @@
 		height: 42px;
 	}
 
-	.predator-pov {
+	.title {
 		position: absolute;
-		bottom: 20px;
-		left: 55px;
-		/* width: 330px; */
-		/* height: 330px; */
+		bottom: 25px;
+		left: 70px;
 		padding: 10px;
 		border-radius: 4px;
 		z-index: 100;
 		pointer-events: none;
 	}
 
-	.predator-pov p {
+	.title p {
 		font-family: monospace;
-		font-size: 13px;
+		font-size: 12px;
 		color: #d0d0d0;
 		margin: 0;
 	}
