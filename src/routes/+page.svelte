@@ -85,7 +85,7 @@
 		font-family: monospace;
 	}
 
-	.green {
+	.title p .green {
 		color: #00ff00;
 	}
 
@@ -110,13 +110,12 @@
 		border-radius: 4px;
 		z-index: 100;
 		pointer-events: none;
-		font-weight: 600;
 	}
 
 	.title p {
 		font-family: monospace;
 		font-size: 12px;
-		color: #d0d0d0;
+		color: #f0f0f0;
 		margin: 0;
 	}
 </style>
