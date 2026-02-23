@@ -110,6 +110,7 @@
 		border-radius: 4px;
 		z-index: 100;
 		pointer-events: none;
+		font-weight: 600;
 	}
 
 	.title p {
