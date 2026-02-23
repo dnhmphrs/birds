@@ -48,7 +48,7 @@
 	</div>
 
 	<div class="title">
-		<p>FLOCKING // <span class="green">PREDATOR POV</span></p>
+		<p>FLOCKING /<span class="green">/ PREDATOR POV</span></p>
 	</div>
 
 </div>
