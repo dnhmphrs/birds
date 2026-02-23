@@ -48,7 +48,7 @@
 	</div>
 
 	<div class="title">
-		<p>FLOCKING // PREDATOR POV</p>
+		<p>FLOCKING // <span class="green">PREDATOR POV</span></p>
 	</div>
 
 </div>
@@ -83,6 +83,10 @@
 		padding: 2rem;
 		border-radius: 8px;
 		font-family: monospace;
+	}
+
+	.green {
+		color: #00ff00;
 	}
 
 	.music {

@@ -119,14 +119,15 @@ export class FlockingEngine {
 	async createPipelines() {
 		const device = this.device;
 
-		const [birdShader, predatorShader, bgShader, flockingShader, huntingShader, lineShader] =
+		const [birdShader, predatorShader, bgShader, flockingShader, huntingShader, lineShader, borderShader] =
 			await Promise.all([
 				fetch('/shaders/bird.wgsl').then(r => r.text()),
 				fetch('/shaders/predator.wgsl').then(r => r.text()),
 				fetch('/shaders/background.wgsl').then(r => r.text()),
 				fetch('/shaders/flocking.wgsl').then(r => r.text()),
 				fetch('/shaders/hunting.wgsl').then(r => r.text()),
-				fetch('/shaders/line.wgsl').then(r => r.text())
+				fetch('/shaders/line.wgsl').then(r => r.text()),
+				fetch('/shaders/border.wgsl').then(r => r.text())
 			]);
 
 		// Flocking compute
@@ -302,6 +303,19 @@ export class FlockingEngine {
 				{ binding: 2, resource: { buffer: this.guidingLineBuffer } }
 			]
 		});
+
+		// Border render (green outline for predator PIP)
+		const borderLayout = device.createBindGroupLayout({ entries: [] });
+
+		this.borderPipeline = device.createRenderPipeline({
+			layout: device.createPipelineLayout({ bindGroupLayouts: [borderLayout] }),
+			vertex: { module: device.createShaderModule({ code: borderShader }), entryPoint: 'vertex_main', buffers: [] },
+			fragment: { module: device.createShaderModule({ code: borderShader }), entryPoint: 'fragment_main', targets: [{ format: this.format }] },
+			primitive: { topology: 'line-list' },
+			depthStencil: { format: 'depth24plus', depthWriteEnabled: false, depthCompare: 'always' }
+		});
+
+		this.borderBindGroup = device.createBindGroup({ layout: borderLayout, entries: [] });
 	}
 
 	initBoids() {
@@ -464,6 +478,19 @@ export class FlockingEngine {
 		povPass.drawIndexed(this.birdGeom.indexCount, BIRD_COUNT);
 
 		povPass.end();
+
+		// Green border outline around predator PIP
+		const borderThickness = 2;
+		const borderPass = encoder.beginRenderPass({
+			colorAttachments: [{ view: textureView, loadOp: 'load', storeOp: 'store' }],
+			depthStencilAttachment: { view: depthView, depthLoadOp: 'clear', depthClearValue: 1.0, depthStoreOp: 'store' }
+		});
+
+		borderPass.setViewport(pipX - borderThickness, pipY - borderThickness, pipSize + borderThickness * 2, pipSize + borderThickness * 2, 0, 1);
+		borderPass.setPipeline(this.borderPipeline);
+		borderPass.setBindGroup(0, this.borderBindGroup);
+		borderPass.draw(8);
+		borderPass.end();
 
 		this.device.queue.submit([encoder.finish()]);
 		requestAnimationFrame(this.render);
