@@ -115,7 +115,7 @@
 	.title p {
 		font-family: monospace;
 		font-size: 12px;
-		color: #f0f0f0;
+		color: #232323;
 		margin: 0;
 	}
 </style>
