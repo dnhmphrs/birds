@@ -3,8 +3,11 @@ struct VertexOutput {
     @location(0) fragPos: vec2<f32>,
 };
 
-// x = time (seconds), yz = resolution (px)
-@group(0) @binding(0) var<uniform> uParams: vec4<f32>;
+struct BgParams {
+    frame: vec4<f32>,   // x = time (s), yz = resolution (px)
+    camera: vec4<f32>,  // x = yaw (orbit), y = pitch
+};
+@group(0) @binding(0) var<uniform> u: BgParams;
 
 @vertex
 fn vertex_main(@builtin(vertex_index) idx: u32) -> VertexOutput {
@@ -51,13 +54,15 @@ fn fragment_main(@location(0) fragPos: vec2<f32>) -> @location(0) vec4<f32> {
     let SCALE    = 1.10;                    // cloud size (larger = bigger, softer puffs)
     let SPEED    = 0.025;                   // horizontal drift
     let STRETCH  = vec2<f32>(1.0, 1.0);     // soft puffs; wispy streaks: vec2(0.5, 2.4)
+    let PARALLAX = 0.15;                    // how strongly clouds track the camera (0 = fixed)
 
-    let time = uParams.x;
-    let aspect = uParams.y / max(uParams.z, 1.0);
+    let time = u.frame.x;
+    let aspect = u.frame.y / max(u.frame.z, 1.0);
     let uv = vec2<f32>((fragPos.x * 0.5 + 0.5) * aspect, t);
 
     var cp = uv * (1.8 / SCALE) * STRETCH;
-    cp.x = cp.x + time * SPEED;
+    cp.x = cp.x + time * SPEED + u.camera.x * PARALLAX;   // slide with orbit
+    cp.y = cp.y + u.camera.y * PARALLAX;                  // slide with pitch
     let n = fbm(cp);
 
     let threshold = mix(0.72, 0.34, COVERAGE);

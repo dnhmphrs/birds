@@ -101,7 +101,7 @@ export class FlockingEngine {
 		});
 
 		this.bgParamsBuffer = device.createBuffer({
-			size: 16,
+			size: 32,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
 		});
 
@@ -400,7 +400,10 @@ export class FlockingEngine {
 		}
 
 		this.device.queue.writeBuffer(this.deltaTimeBuffer, 0, new Float32Array([dt]));
-		this.device.queue.writeBuffer(this.bgParamsBuffer, 0, new Float32Array([(now - this.startTime) / 1000, this.canvasWidth, this.canvasHeight, 0]));
+		this.device.queue.writeBuffer(this.bgParamsBuffer, 0, new Float32Array([
+			(now - this.startTime) / 1000, this.canvasWidth, this.canvasHeight, 0,
+			this.cameraController.theta, this.cameraController.phi, 0, 0
+		]));
 
 		const encoder = this.device.createCommandEncoder();
 
