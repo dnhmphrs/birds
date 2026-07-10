@@ -38,6 +38,7 @@ export class FlockingEngine {
 		this.initBoids();
 		this.setupEvents();
 
+		this.startTime = performance.now();
 		this.running = true;
 		this.render();
 	}
@@ -95,6 +96,11 @@ export class FlockingEngine {
 		});
 
 		this.viewportBuffer = device.createBuffer({
+			size: 16,
+			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+		});
+
+		this.bgParamsBuffer = device.createBuffer({
 			size: 16,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
 		});
@@ -267,7 +273,9 @@ export class FlockingEngine {
 		});
 
 		// Background render
-		const bgLayout = device.createBindGroupLayout({ entries: [] });
+		const bgLayout = device.createBindGroupLayout({
+			entries: [{ binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } }]
+		});
 
 		this.bgPipeline = device.createRenderPipeline({
 			layout: device.createPipelineLayout({ bindGroupLayouts: [bgLayout] }),
@@ -276,7 +284,10 @@ export class FlockingEngine {
 			depthStencil: { format: 'depth24plus', depthWriteEnabled: false, depthCompare: 'always' }
 		});
 
-		this.bgBindGroup = device.createBindGroup({ layout: bgLayout, entries: [] });
+		this.bgBindGroup = device.createBindGroup({
+			layout: bgLayout,
+			entries: [{ binding: 0, resource: { buffer: this.bgParamsBuffer } }]
+		});
 
 		// Line render
 		const lineLayout = device.createBindGroupLayout({
@@ -389,6 +400,7 @@ export class FlockingEngine {
 		}
 
 		this.device.queue.writeBuffer(this.deltaTimeBuffer, 0, new Float32Array([dt]));
+		this.device.queue.writeBuffer(this.bgParamsBuffer, 0, new Float32Array([(now - this.startTime) / 1000, this.canvasWidth, this.canvasHeight, 0]));
 
 		const encoder = this.device.createCommandEncoder();
 
@@ -413,7 +425,7 @@ export class FlockingEngine {
 
 		// Main render pass
 		const renderPass = encoder.beginRenderPass({
-			colorAttachments: [{ view: textureView, loadOp: 'clear', storeOp: 'store', clearValue: { r: 0.13, g: 0.10, b: 0.24, a: 1 } }],
+			colorAttachments: [{ view: textureView, loadOp: 'clear', storeOp: 'store', clearValue: { r: 0.2, g: 0.5, b: 0.9, a: 1 } }],
 			depthStencilAttachment: { view: depthView, depthLoadOp: 'clear', depthClearValue: 1.0, depthStoreOp: 'store' }
 		});
 
