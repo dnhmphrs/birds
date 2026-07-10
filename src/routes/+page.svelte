@@ -5,6 +5,11 @@
 	let canvas;
 	let engine;
 	let error = null;
+	let cloudsOn = true;
+
+	function toggleClouds() {
+		if (engine) cloudsOn = engine.toggleClouds();
+	}
 
 	onMount(async () => {
 		if (!navigator.gpu) {
@@ -50,6 +55,10 @@
 	<div class="title">
 		<p>FLOCKING /<span class="green">/ PREDATOR POV</span></p>
 	</div>
+
+	<button class="clouds-toggle" on:click={toggleClouds} aria-pressed={cloudsOn}>
+		CLOUDS: {cloudsOn ? 'ON' : 'OFF'}
+	</button>
 
 </div>
 
@@ -117,5 +126,25 @@
 		font-size: 12px;
 		color: #232323;
 		margin: 0;
+	}
+
+	.clouds-toggle {
+		position: absolute;
+		bottom: 20px;
+		right: 20px;
+		z-index: 100;
+		font-family: monospace;
+		font-size: 11px;
+		letter-spacing: 0.08em;
+		color: #ffffff;
+		background: rgba(0, 0, 0, 0.35);
+		border: 1px solid rgba(255, 255, 255, 0.25);
+		border-radius: 4px;
+		padding: 7px 11px;
+		cursor: pointer;
+	}
+
+	.clouds-toggle:hover {
+		background: rgba(0, 0, 0, 0.55);
 	}
 </style>
