@@ -13,6 +13,41 @@ export class FlockingEngine {
 		this.lastTime = performance.now();
 		this.lastTargetChange = this.lastTime;
 		this.targetChangeInterval = 10000;
+		this.cloudsEnabled = true;
+		this.povYaw = null;      // accumulated (seam-free) predator yaw
+		this.povPitch = 0;
+		this._prevPovRawYaw = 0;
+	}
+
+	setCloudsEnabled(enabled) {
+		this.cloudsEnabled = enabled;
+	}
+
+	toggleClouds() {
+		this.cloudsEnabled = !this.cloudsEnabled;
+		return this.cloudsEnabled;
+	}
+
+	// Yaw/pitch of the predator camera's view direction, used to parallax the
+	// clouds in the POV pass. Yaw is unwrapped so it never jumps at the seam.
+	predatorCloudAngles() {
+		const p = this.predatorCamera.position;
+		const tg = this.predatorCamera.target;
+		let fx = tg[0] - p[0], fy = tg[1] - p[1], fz = tg[2] - p[2];
+		const len = Math.hypot(fx, fy, fz);
+		if (len < 1e-4) return [this.povYaw ?? 0, this.povPitch]; // not initialised yet
+		fy /= len;
+		const rawYaw = Math.atan2(fz, fx);
+		if (this.povYaw === null) {
+			this.povYaw = rawYaw;
+		} else {
+			let d = rawYaw - this._prevPovRawYaw;
+			d = Math.atan2(Math.sin(d), Math.cos(d)); // shortest signed step
+			this.povYaw += d;
+		}
+		this._prevPovRawYaw = rawYaw;
+		this.povPitch = Math.acos(Math.max(-1, Math.min(1, -fy)));
+		return [this.povYaw, this.povPitch];
 	}
 
 	async init() {
@@ -101,6 +136,11 @@ export class FlockingEngine {
 		});
 
 		this.bgParamsBuffer = device.createBuffer({
+			size: 32,
+			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+		});
+
+		this.bgParamsBufferPov = device.createBuffer({
 			size: 32,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
 		});
@@ -289,6 +329,11 @@ export class FlockingEngine {
 			entries: [{ binding: 0, resource: { buffer: this.bgParamsBuffer } }]
 		});
 
+		this.bgBindGroupPov = device.createBindGroup({
+			layout: bgLayout,
+			entries: [{ binding: 0, resource: { buffer: this.bgParamsBufferPov } }]
+		});
+
 		// Line render
 		const lineLayout = device.createBindGroupLayout({
 			entries: [
@@ -400,9 +445,17 @@ export class FlockingEngine {
 		}
 
 		this.device.queue.writeBuffer(this.deltaTimeBuffer, 0, new Float32Array([dt]));
+
+		const bgTime = (now - this.startTime) / 1000;
+		const cloudsFlag = this.cloudsEnabled ? 1 : 0;
 		this.device.queue.writeBuffer(this.bgParamsBuffer, 0, new Float32Array([
-			(now - this.startTime) / 1000, this.canvasWidth, this.canvasHeight, 0,
+			bgTime, this.canvasWidth, this.canvasHeight, cloudsFlag,
 			this.cameraController.theta, this.cameraController.phi, 0, 0
+		]));
+		const [povYaw, povPitch] = this.predatorCloudAngles();
+		this.device.queue.writeBuffer(this.bgParamsBufferPov, 0, new Float32Array([
+			bgTime, this.canvasWidth, this.canvasHeight, cloudsFlag,
+			povYaw, povPitch, 0, 0
 		]));
 
 		const encoder = this.device.createCommandEncoder();
@@ -483,7 +536,7 @@ export class FlockingEngine {
 		});
 
 		povPass.setPipeline(this.bgPipeline);
-		povPass.setBindGroup(0, this.bgBindGroup);
+		povPass.setBindGroup(0, this.bgBindGroupPov);
 		povPass.draw(3);
 
 		povPass.setPipeline(this.birdPipeline);
@@ -546,6 +599,8 @@ export class FlockingEngine {
 		this.deltaTimeBuffer?.destroy();
 		this.flockingParamsBuffer?.destroy();
 		this.viewportBuffer?.destroy();
+		this.bgParamsBuffer?.destroy();
+		this.bgParamsBufferPov?.destroy();
 		this.mouseBuffer?.destroy();
 		this.guidingLineBuffer?.destroy();
 		this.birdGeom?.vertexBuffer?.destroy();

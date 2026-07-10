@@ -4,8 +4,8 @@ struct VertexOutput {
 };
 
 struct BgParams {
-    frame: vec4<f32>,   // x = time (s), yz = resolution (px)
-    camera: vec4<f32>,  // x = yaw (orbit), y = pitch
+    frame: vec4<f32>,   // x = time (s), yz = resolution (px), w = clouds on/off
+    camera: vec4<f32>,  // x = yaw, y = pitch (of the camera drawing this pass)
 };
 @group(0) @binding(0) var<uniform> u: BgParams;
 
@@ -46,6 +46,11 @@ fn fbm(p0: vec2<f32>) -> f32 {
 fn fragment_main(@location(0) fragPos: vec2<f32>) -> @location(0) vec4<f32> {
     let t = (fragPos.y + 1.0) / 2.0;
     let sky = mix(vec3<f32>(0.2, 0.5, 0.9), vec3<f32>(0.4, 0.45, 0.85), t);
+
+    // Clouds toggled off: plain blue, no cloud work at all.
+    if (u.frame.w < 0.5) {
+        return vec4<f32>(sky, 1.0);
+    }
 
     // --- mild drifting clouds -------------------------------------------
     // Four knobs to taste (set AMOUNT = 0.0 for no clouds):
