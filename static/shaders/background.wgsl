@@ -55,7 +55,7 @@ fn fragment_main(@location(0) fragPos: vec2<f32>) -> @location(0) vec4<f32> {
     // --- mild drifting clouds -------------------------------------------
     // Four knobs to taste (set AMOUNT = 0.0 for no clouds):
     let AMOUNT   = 0.55;                    // max opacity of the clouds
-    let COVERAGE = 0.55;                    // 0 = sparse wisps, 1 = overcast
+    let COVERAGE = 0.85;                    // 0 = sparse wisps, 1 = overcast
     let SCALE    = 1.10;                    // cloud size (larger = bigger, softer puffs)
     let SPEED    = 0.025;                   // horizontal drift
     let STRETCH  = vec2<f32>(1.0, 1.0);     // soft puffs; wispy streaks: vec2(0.5, 2.4)
