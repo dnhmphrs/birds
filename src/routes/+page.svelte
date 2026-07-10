@@ -56,9 +56,9 @@
 		<p>FLOCKING /<span class="green">/ PREDATOR POV</span></p>
 	</div>
 
-	<button class="clouds-toggle" on:click={toggleClouds} aria-pressed={cloudsOn}>
+	<!-- <button class="clouds-toggle" on:click={toggleClouds} aria-pressed={cloudsOn}>
 		CLOUDS: {cloudsOn ? 'ON' : 'OFF'}
-	</button>
+	</button> -->
 
 </div>
 
