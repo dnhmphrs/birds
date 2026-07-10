@@ -413,7 +413,7 @@ export class FlockingEngine {
 
 		// Main render pass
 		const renderPass = encoder.beginRenderPass({
-			colorAttachments: [{ view: textureView, loadOp: 'clear', storeOp: 'store', clearValue: { r: 0.2, g: 0.5, b: 0.9, a: 1 } }],
+			colorAttachments: [{ view: textureView, loadOp: 'clear', storeOp: 'store', clearValue: { r: 0.13, g: 0.10, b: 0.24, a: 1 } }],
 			depthStencilAttachment: { view: depthView, depthLoadOp: 'clear', depthClearValue: 1.0, depthStoreOp: 'store' }
 		});
 
